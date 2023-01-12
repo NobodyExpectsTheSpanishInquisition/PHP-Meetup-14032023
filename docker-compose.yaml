@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-      args:
-        - IMAGE_TAG=${PHP_IMAGE_TAG}
     container_name: 'meetup-api'
     volumes:
       - ./api:/var/www/html/api:rw
