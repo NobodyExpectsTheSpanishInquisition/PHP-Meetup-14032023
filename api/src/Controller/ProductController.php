@@ -3,6 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Notification\NotificationService;
+use App\Notification\ProductEditedNotification;
+use App\Notification\ProductHasDiscountNotification;
+use App\Repository\DiscountRepository;
 use App\Repository\ProductRepository;
 use App\View\ProductView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -61,13 +65,30 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_product_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Product $product, ProductRepository $productRepository): Response
-    {
+    public function edit(
+        Request $request,
+        Product $product,
+        ProductRepository $productRepository,
+        DiscountRepository $discountRepository,
+        NotificationService $notificationService
+    ): Response {
+        $productId = $product->getId();
+
         $product->setName($request->get('name'));
         $product->setPrice($request->get('price'));
         $product->setDescription($request->get('description'));
 
+        if (null !== $request->get('discountId')) {
+            $discountId = $request->get('discountId');
+            $discount = $discountRepository->find($discountId);
+
+            $product->setDiscount($discount);
+
+            $notificationService->send(new ProductHasDiscountNotification($productId, $discountId));
+        }
+
         $productRepository->save($product, true);
+        $notificationService->send(new ProductEditedNotification($productId));
 
         return new JsonResponse(null, 204);
     }

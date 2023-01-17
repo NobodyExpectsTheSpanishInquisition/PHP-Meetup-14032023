@@ -23,12 +23,18 @@ class Product
     #[ORM\Column(length: 20, nullable: false)]
     private string $price;
 
+    #[ORM\ManyToOne(targetEntity: Discount::class)]
+    #[ORM\JoinColumn(name: 'discount_id', referencedColumnName: 'id', nullable: true)]
+    private ?Discount $discount;
+
     public function __construct(string $uuid, string $name, string $description, string $price)
     {
         $this->uuid = $uuid;
         $this->name = $name;
         $this->description = $description;
         $this->price = $price;
+
+        $this->discount = null;
     }
 
     public function getId(): int
@@ -69,5 +75,15 @@ class Product
     public function setPrice(string $price): void
     {
         $this->price = $price;
+    }
+
+    public function getDiscount(): ?Discount
+    {
+        return $this->discount;
+    }
+
+    public function setDiscount(?Discount $discount): void
+    {
+        $this->discount = $discount;
     }
 }
