@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Product;
 use App\Repository\ProductRepository;
+use App\View\ProductView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,13 +19,28 @@ class ProductController extends AbstractController
     {
         $products = $productRepository->findAll();
 
-        return new JsonResponse();
+        $views = array_map(
+            static fn(Product $product): ProductView => new ProductView(
+                $product->getId(),
+                $product->getName(),
+                $product->getDescription(),
+                $product->getPrice()
+            ),
+            $products
+        );
+
+        return new JsonResponse($views);
     }
 
     #[Route('/new', name: 'app_product_new', methods: ['GET', 'POST'])]
     public function new(Request $request, ProductRepository $productRepository): JsonResponse
     {
-        $product = new Product();
+        $product = new Product(
+            $request->get('uuid'),
+            $request->get('name'),
+            $request->get('description'),
+            $request->get('price'),
+        );
 
         $productRepository->save($product, true);
 
@@ -34,12 +50,23 @@ class ProductController extends AbstractController
     #[Route('/{id}', name: 'app_product_show', methods: ['GET'])]
     public function show(Product $product): Response
     {
-        return new JsonResponse();
+        return new JsonResponse(
+            new ProductView(
+                $product->getId(),
+                $product->getName(),
+                $product->getDescription(),
+                $product->getPrice()
+            )
+        );
     }
 
     #[Route('/{id}/edit', name: 'app_product_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Product $product, ProductRepository $productRepository): Response
     {
+        $product->setName($request->get('name'));
+        $product->setPrice($request->get('price'));
+        $product->setDescription($request->get('description'));
+
         $productRepository->save($product, true);
 
         return new JsonResponse(null, 204);
